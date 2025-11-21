@@ -1,4 +1,4 @@
-# Seminário – Zero Trust Network Access (ZTNA)
+# Zero Trust Network Access (ZTNA)
 
 Repositório da prática do seminário de **Redes de Computadores** (UNICAP), focado em uma prova de conceito de **Zero Trust Network Access (ZTNA)** usando Python.
 
