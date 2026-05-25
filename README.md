@@ -1,80 +1,86 @@
-# Zero Trust Network Access (ZTNA)
+# ZTNA Gateway — Prova de Conceito em Python
 
-Repositório da prática do seminário de **Redes de Computadores** (UNICAP), focado em uma prova de conceito de **Zero Trust Network Access (ZTNA)** usando Python.
+Projeto de demonstração prática de **ZTNA (Zero Trust Network Access)**, desenvolvido em Python, com foco em ilustrar o princípio de segurança:
 
-## 🎯 Objetivo
+> **Never trust, always verify**  
+> **Nunca confiar automaticamente, sempre verificar.**
 
-Implementar uma PoC simples que demonstre o princípio:
-
-> **“Never trust, always verify” – Nunca confiar, sempre verificar.**
-
-A ideia é mostrar que mesmo estando “dentro da rede”, o acesso a um serviço sensível só é permitido se o cliente estiver devidamente autorizado.
+A proposta do projeto é mostrar, de forma simples, como um **gateway de acesso** pode proteger um serviço interno sensível, permitindo acesso apenas a usuários autorizados.
 
 ---
 
-## 🧱 Arquitetura da PoC
+## Objetivo
 
-Topologia (localhost):
+Demonstrar, em uma prova de conceito, como o modelo **Zero Trust** pode ser aplicado ao acesso a aplicações internas.
 
-- `servidor_secreto.py`  
-  - Servidor HTTP em `127.0.0.1:8080`
-  - Retorna uma página **CONFIDENCIAL** (simulando um servidor de RH)
-  - Não faz autenticação própria (confia no gateway)
+No projeto:
 
-- `ztna_gateway.py`  
-  - Servidor em `127.0.0.1:9000`
-  - Verifica um **token** na requisição
-  - Se o token for válido → faz proxy para `8080`  
-  - Se for inválido/ausente → responde **HTTP 403 – ACESSO NEGADO (ZERO TRUST)**
-
-- `cliente_teste.py`  
-  - Script que envia requisições ao gateway com 3 cenários:
-    - Sem token  
-    - Token incorreto (`senha_fraca`)  
-    - Token correto (`segredo_super_seguro`)
+- o serviço protegido **não deve ser acessado diretamente**;
+- o acesso deve passar por um **gateway ZTNA**;
+- o gateway valida se o cliente está autorizado;
+- apenas após essa verificação o conteúdo confidencial é liberado.
 
 ---
 
-## 🔬 Experimentos
+## Conceitos usados
 
-### Experimento 1 – Tokens x Resposta
+### ZTA — Zero Trust Architecture
+É a arquitetura geral de segurança baseada no princípio de que nenhum usuário, dispositivo ou requisição deve ser confiado automaticamente.
 
-Três chamadas do `cliente_teste.py`:
+### ZTNA — Zero Trust Network Access
+É uma aplicação prática da ZTA, focada em **controle de acesso a serviços e aplicações de rede**.
 
-| Cenário | Token              | HTTP | Resultado                |
-|--------:|--------------------|-----:|--------------------------|
-| A       | nenhum             | 403  | acesso negado            |
-| B       | `senha_fraca`      | 403  | acesso negado            |
-| C       | `segredo_super_seguro` | 200 | acesso permitido + HTML confidencial |
-
-Esse teste mostra que **só o cliente com token correto consegue chegar ao servidor secreto**.
-
-### Experimento 2 – Porta 9000 bloqueada/liberada
-
-1. Acesso no navegador a `http://localhost:9000` (sem token)  
-   - Página vermelha de **ACESSO NEGADO (ZERO TRUST)**  
-   - Logs do gateway: *Acesso BLOQUEADO* (403)
-
-2. Execução do cliente com token/senha correta  
-   - Gateway passa a aceitar a requisição  
-   - Navegador em `127.0.0.1:9000/?token=...` mostra a página **CONFIDENCIAL**
-
-Na prática, a **mesma porta 9000** parece “fechada” para usuários não autorizados e “abre” apenas para quem atende à política do gateway.
+Neste projeto, o **gateway** funciona como o mecanismo de ZTNA.
 
 ---
 
-## ▶️ Como executar
+## Estrutura do projeto
 
-```bash
-# 1. Iniciar o servidor secreto
-python servidor_secreto.py
+### `servidor_secreto.py`
+Simula um serviço interno sensível.
 
-# 2. Iniciar o gateway ZTNA
-python ztna_gateway.py
+Função:
+- hospedar um conteúdo confidencial;
+- responder apenas quando o acesso vier corretamente por meio do gateway.
 
-# 3. Rodar o cliente de teste (3 cenários de token)
-python cliente_teste.py
+Exemplo de conteúdo:
+- “dados confidenciais”
+- informação sensível simulada, como salário do CEO
 
-# 4. (Experimento 2) Acessar no navegador:
-#    - Sem token:  http://localhost:9000
-#    - Com token:  http://127.0.0.1:9000/?token=SEU_TOKEN
+---
+
+### `ztna_gateway.py`
+É o componente principal da prova de conceito.
+
+Função:
+- receber o acesso do usuário;
+- validar token/autorização;
+- liberar ou bloquear o acesso;
+- encaminhar a requisição ao servidor protegido apenas quando permitido.
+
+É o elemento que representa o controle de acesso baseado em **Zero Trust**.
+
+---
+
+## Fluxo da aplicação
+
+1. O usuário tenta acessar o gateway.
+2. O gateway verifica se o acesso está autorizado.
+3. Se não estiver autorizado:
+   - o acesso é negado.
+4. Se estiver autorizado:
+   - o gateway libera a entrada;
+   - o conteúdo do servidor protegido passa a ser exibido.
+
+---
+
+## Arquitetura simplificada
+
+```text
+Usuário/Navegador
+        |
+        v
+   ZTNA Gateway  ---- valida acesso ----> se autorizado
+        |
+        v
+Servidor Secreto (protegido)
